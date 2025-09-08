@@ -6,6 +6,8 @@ from config import proxies
 import asyncio
 import sys
 import ccxt
+import time
+from tqdm import tqdm
 
 # 设置日志
 logging.basicConfig(
@@ -46,7 +48,7 @@ def download_ohlcv(exchange, symbol, timeframe, since, limit=1000):
         since_ms = int(since_dt.timestamp() * 1000)
     else:
         since_ms = since
-
+    
     try:
         earliest = find_earliest_ohlcv(exchange, symbol, timeframe)
         if earliest and earliest > since_ms:
@@ -56,17 +58,21 @@ def download_ohlcv(exchange, symbol, timeframe, since, limit=1000):
 
     all_ohlcv = []
     while True:
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe, since_ms, limit)
+        try:
+            ohlcv = exchange.fetch_ohlcv(symbol, timeframe, since_ms, limit)
+        except Exception as e:
+            logging.error(f"fetch_ohlcv error: {e}")
+            return all_ohlcv
         if not ohlcv:
             break
         all_ohlcv.extend(ohlcv)
         last_timestamp = ohlcv[-1][0]
+        print(f"最新K线时间: {datetime.utcfromtimestamp(last_timestamp / 1000)}")
         if since_ms >= last_timestamp:
             break
         since_ms = last_timestamp + 1
         if len(ohlcv) < limit:
             break
-    
     return all_ohlcv
 
 def filter_usdt_crypto_symbols(markets, market_type='all'):
@@ -120,27 +126,26 @@ def download_all_data(exchange, timeframes, since, limit=1000, market_type='all'
         symbol_list = spot_list + swap_list
 
     failed = []
+
     total = len(symbol_list) * len(timeframes)
-    count = 0
-    for symbol in symbol_list:
-        info = exchange.markets[symbol]
-        mtype = 'spot' if info.get('spot') else 'swap' if info.get('swap') else 'unknown'
-        for tf in timeframes:
-            try:
-                ohlcv = exchange.fetch_ohlcv(symbol, tf, since, limit)
-                if ohlcv:
-                    save_ohlcv_to_csv(ohlcv, symbol, tf, exchange.id, mtype)
-                    logging.info(f"SUCCESS: {exchange.id} {mtype} {symbol} {tf}")
-                else:
-                    msg = f"NO DATA: {exchange.id} {mtype} {symbol} {tf}"
-                    logging.warning(msg)
-                    failed.append((symbol, tf, mtype, "no data"))
-            except Exception as e:
-                msg = f"FAILED: {exchange.id} {mtype} {symbol} {tf}: {e}"
-                logging.error(msg)
-                failed.append((symbol, tf, mtype, str(e)))
-            count += 1
-            print(f"[{count}/{total}] {mtype} {symbol} {tf} done")
+    with tqdm(total=total, desc="Downloading OHLCV") as pbar:
+        for symbol in symbol_list:
+            info = exchange.markets[symbol]
+            mtype = 'spot' if info.get('spot') else 'swap' if info.get('swap') else 'unknown'
+            for tf in timeframes:
+                try:
+                    ohlcv = download_ohlcv(exchange, symbol, tf, since, limit)
+                    if ohlcv:
+                        save_ohlcv_to_csv(ohlcv, symbol, tf, exchange.id, mtype)
+                    else:
+                        msg = f"NO DATA: {exchange.id} {mtype} {symbol} {tf}"
+                        logging.warning(msg)
+                        failed.append((symbol, tf, mtype, "no data"))
+                except Exception as e:
+                    msg = f"FAILED: {exchange.id} {mtype} {symbol} {tf}: {e}"
+                    logging.error(msg)
+                    failed.append((symbol, tf, mtype, str(e)))
+                pbar.update(1)
 
     if failed:
         print("\n下载失败的币对/周期：")
@@ -206,8 +211,18 @@ if __name__ == "__main__":
     })
     download_all_data(
         exchange,
-        timeframes=['5m', '15m', '1h', '1d'],
+        timeframes=['1h', '1d'],
         since=int(datetime(2017, 1, 1).timestamp() * 1000),
         limit=1000,
         market_type='spot'
     )
+
+    # ohlcv = download_ohlcv(
+    #     exchange,
+    #     symbol='BTC/USDT',
+    #     timeframe='1d',
+    #     since=int(datetime(2017, 1, 1).timestamp() * 1000),
+    #     limit=1000,
+    # )
+
+    # save_ohlcv_to_csv(ohlcv, 'BTC/USDT', '1d', exchange.id, 'spot')
