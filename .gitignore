@@ -1,0 +1,7 @@
+# .gitignore
+*.pyc
+__pycache__/
+data/
+download_log.txt
+.env
+test_dir
