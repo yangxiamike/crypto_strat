@@ -1,8 +1,8 @@
-# .gitignore
 *.pyc
-__pycache__/
-data/
-download_log.txt
-.env
-test_dir
-code-with-paper/
+*__pycache__*
+*.txt
+*.log
+*.out
+*.png
+config.json
+.*/
