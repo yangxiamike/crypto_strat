@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 # 设置日志
 logging.basicConfig(
-    filename='download_log.txt',
+    filename='data/download_log.txt',
     level=logging.INFO,
     format='%(asctime)s %(levelname)s %(message)s'
 )
@@ -209,20 +209,20 @@ if __name__ == "__main__":
         'enableRateLimit': True,
         'proxies': proxies
     })
-    download_all_data(
-        exchange,
-        timeframes=['1h', '1d'],
-        since=int(datetime(2017, 1, 1).timestamp() * 1000),
-        limit=1000,
-        market_type='spot'
-    )
-
-    # ohlcv = download_ohlcv(
+    # download_all_data(
     #     exchange,
-    #     symbol='BTC/USDT',
-    #     timeframe='1d',
+    #     timeframes=['1h', '1d'],
     #     since=int(datetime(2017, 1, 1).timestamp() * 1000),
     #     limit=1000,
+    #     market_type='spot'
     # )
 
-    # save_ohlcv_to_csv(ohlcv, 'BTC/USDT', '1d', exchange.id, 'spot')
+    ohlcv = download_ohlcv(
+        exchange,
+        symbol='BTC/USDT',
+        timeframe='15m',
+        since=int(datetime(2021, 1, 1).timestamp() * 1000),
+        limit=1000,
+    )
+
+    save_ohlcv_to_csv(ohlcv, 'BTC/USDT', '15m', exchange.id, 'spot')
