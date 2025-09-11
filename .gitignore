@@ -6,3 +6,4 @@ download_log.txt
 .env
 test_dir
 code-with-paper/
+*.csv
