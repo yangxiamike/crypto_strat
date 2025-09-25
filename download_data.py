@@ -217,12 +217,14 @@ if __name__ == "__main__":
     #     market_type='spot'
     # )
 
+    timeframe = "4h"
+
     ohlcv = download_ohlcv(
         exchange,
         symbol='BTC/USDT',
-        timeframe='15m',
+        timeframe=timeframe,
         since=int(datetime(2021, 1, 1).timestamp() * 1000),
         limit=1000,
     )
 
-    save_ohlcv_to_csv(ohlcv, 'BTC/USDT', '15m', exchange.id, 'spot')
+    save_ohlcv_to_csv(ohlcv, 'BTC/USDT', timeframe, exchange.id, 'spot')

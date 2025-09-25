@@ -1,13 +1,4 @@
 *.pyc
-<<<<<<< HEAD
-__pycache__/
-data/
-download_log.txt
-.env
-test_dir
-code-with-paper/
-*.csv
-=======
 *__pycache__*
 *.txt
 *.log
@@ -15,4 +6,4 @@ code-with-paper/
 *.png
 config.json
 .*/
->>>>>>> 7617e38ede4dd48d800cf6cad34e12190c12d2d0
+*.csv
